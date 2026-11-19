@@ -6,10 +6,12 @@ permissions:
   contents: read
 jobs:
   reproducible-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Install the pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.85.1
       - name: Install cosmwasm-check
         run: cargo install cosmwasm-check --version 1.5.11 --locked
       - name: Build, test, verify hash, and reproduce
