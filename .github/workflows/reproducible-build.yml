@@ -1,0 +1,23 @@
+name: Reproducible Avatar Club 100 Wasm
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  reproducible-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cosmwasm-check
+        run: cargo install cosmwasm-check --version 1.5.11 --locked
+      - name: Build, test, verify hash, and reproduce
+        run: bash scripts/passavatar/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rd-passavatar-wasm-${{ github.sha }}
+          path: |
+            artifacts/passavatar/rd_passavatar.wasm
+            artifacts/passavatar/checksums.txt
+          if-no-files-found: error
