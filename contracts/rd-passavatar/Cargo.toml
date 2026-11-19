@@ -1,0 +1,22 @@
+[package]
+name = "rd-passavatar"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cosmwasm-std = "=1.5.11"
+cosmwasm-schema = "=1.5.11"
+cw-storage-plus = "=1.2.0"
+serde = { version = "=1.0.214", features = ["derive"] }
+thiserror = "=1.0.64"
+
+[dev-dependencies]
+cw-multi-test = "=1.2.0"
+ed25519-zebra = "=3.1.0"
+
