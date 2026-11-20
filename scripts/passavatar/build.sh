@@ -7,7 +7,7 @@ artifact_dir="$repo_dir/artifacts/passavatar"
 mkdir -p "$artifact_dir"
 exec > >(tee "$artifact_dir/build.log") 2>&1
 set -x
-rustup toolchain install 1.85.1 --profile minimal --component rust-src --component rustfmt --target wasm32-unknown-unknown
+rustup toolchain install 1.85.1 --no-self-update --profile minimal --component rust-src --component rustfmt --target wasm32-unknown-unknown
 rustc +1.85.1 -vV
 cargo +1.85.1 -V
 uname -sm
