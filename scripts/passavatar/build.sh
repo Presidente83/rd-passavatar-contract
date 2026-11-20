@@ -1,28 +1,45 @@
 #!/usr/bin/env bash
+# Pinned native build with canonical paths, including rebuilt Rust std.
 set -euo pipefail
-cd "$(dirname "$0")/../.."
-contract_dir=contracts/rd-passavatar
-artifact_dir=artifacts/passavatar
-rustup toolchain install 1.85.1 --profile minimal --component rust-src --component rustfmt --target wasm32-unknown-unknown
-cargo +1.85.1 fmt --manifest-path "$contract_dir/Cargo.toml" --check
-cargo +1.85.1 test --manifest-path "$contract_dir/Cargo.toml" --locked
-# Rebuild std as well: prebuilt std can retain unsupported reference-type opcodes.
-RUSTC_BOOTSTRAP=1 RUSTFLAGS="-C target-feature=-bulk-memory,-reference-types,-multivalue" \
-  cargo +1.85.1 build -Z build-std=std,panic_abort --manifest-path "$contract_dir/Cargo.toml" \
-  --locked --release --target wasm32-unknown-unknown --target-dir "$contract_dir/target-compatible"
+repo_dir="$(cd "$(dirname "$0")/../.." && pwd -P)"
+contract_dir="$repo_dir/contracts/rd-passavatar"
+artifact_dir="$repo_dir/artifacts/passavatar"
 mkdir -p "$artifact_dir"
-cp "$contract_dir/target-compatible/wasm32-unknown-unknown/release/rd_passavatar.wasm" "$artifact_dir/"
-expected_sha256="6e2075f95c52b69b116e681d2a8b19778081f2b9de67819bb4063816ce120a84"
-actual_sha256="$(sha256sum "$artifact_dir/rd_passavatar.wasm" | awk '{print $1}')"
-if [[ "$actual_sha256" != "$expected_sha256" ]]; then
-  echo "Wasm SHA-256 mismatch: expected $expected_sha256, got $actual_sha256" >&2
+exec > >(tee "$artifact_dir/build.log") 2>&1
+set -x
+rustup toolchain install 1.85.1 --no-self-update --profile minimal --component rust-src --component rustfmt --target wasm32-unknown-unknown
+rustc +1.85.1 -vV
+cargo +1.85.1 -V
+uname -sm
+# Ambient flags or profiles must not silently change the release recipe.
+unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS CARGO_BUILD_RUSTFLAGS
+if env | grep -q '^CARGO_PROFILE_'; then
+  echo 'Remove CARGO_PROFILE_* environment overrides before a release build.' >&2
   exit 1
 fi
-cosmwasm-check "$artifact_dir/rd_passavatar.wasm"
-# Rebuild in an independent target directory and compare the actual bytes.
-RUSTC_BOOTSTRAP=1 RUSTFLAGS="-C target-feature=-bulk-memory,-reference-types,-multivalue" \
-  cargo +1.85.1 build -Z build-std=std,panic_abort --manifest-path "$contract_dir/Cargo.toml" \
-  --locked --release --target wasm32-unknown-unknown --target-dir "$contract_dir/target-reproducible"
-cmp "$artifact_dir/rd_passavatar.wasm" "$contract_dir/target-reproducible/wasm32-unknown-unknown/release/rd_passavatar.wasm"
-(cd "$artifact_dir" && sha256sum rd_passavatar.wasm > checksums.txt && sha256sum --check checksums.txt)
-
+cargo +1.85.1 fmt --manifest-path "$contract_dir/Cargo.toml" --check
+cargo +1.85.1 test --manifest-path "$contract_dir/Cargo.toml" --locked
+sysroot="$(rustc +1.85.1 --print sysroot)"
+cargo_home="$(cd "${CARGO_HOME:-$HOME/.cargo}" && pwd -P)"
+# Encoded flags preserve paths containing spaces. Most-specific mapping is last.
+flags=("-C" "target-feature=-bulk-memory,-reference-types,-multivalue"
+  "--remap-path-prefix=$repo_dir=/source"
+  "--remap-path-prefix=$cargo_home=/cargo"
+  "--remap-path-prefix=$sysroot=/rust-toolchain")
+printf -v CARGO_ENCODED_RUSTFLAGS '%s\x1f' "${flags[@]}"
+export CARGO_ENCODED_RUSTFLAGS="${CARGO_ENCODED_RUSTFLAGS%$'\x1f'}"
+# Never reuse build outputs. This is one build, not an independent reproduction.
+build_target="$(mktemp -d)"
+trap 'rm -rf "$build_target"' EXIT
+cd "$contract_dir"
+RUSTC_BOOTSTRAP=1 cargo +1.85.1 build -Z build-std=std,panic_abort \
+  --locked --release --target wasm32-unknown-unknown --target-dir "$build_target"
+cp "$build_target/wasm32-unknown-unknown/release/rd_passavatar.wasm" "$artifact_dir/"
+cd "$artifact_dir"
+sha256sum rd_passavatar.wasm > checksums.txt
+cat checksums.txt
+# An initial candidate can be built before its measured hash is recorded.
+# Published candidates must have a committed expected checksum.
+if [[ -f "$repo_dir/release/checksums.txt" ]]; then
+  sha256sum --check "$repo_dir/release/checksums.txt"
+fi

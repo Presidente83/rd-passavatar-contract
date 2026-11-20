@@ -5,21 +5,88 @@ on:
 permissions:
   contents: read
 jobs:
-  reproducible-build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 30
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            layout: first
+          - os: ubuntu-24.04
+            layout: different-longer-path
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - name: Install the pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@1.85.1
-      - name: Install cosmwasm-check
-        run: cargo install cosmwasm-check --version 1.5.11 --locked
-      - name: Build, test, verify hash, and reproduce
+        with:
+          path: ${{ matrix.layout }}/source
+      - name: Isolate toolchain and registry paths
+        run: |
+          echo "RUSTUP_HOME=$RUNNER_TEMP/${{ matrix.layout }}/rustup" >> "$GITHUB_ENV"
+          echo "CARGO_HOME=$RUNNER_TEMP/${{ matrix.layout }}/cargo" >> "$GITHUB_ENV"
+      - name: Build and test from a clean environment
+        working-directory: ${{ matrix.layout }}/source
         run: bash scripts/passavatar/build.sh
+      - name: Validate CosmWasm compatibility
+        working-directory: ${{ matrix.layout }}/source
+        run: |
+          set -o pipefail
+          cargo +1.85.1 install cosmwasm-check --version 1.5.11 --locked
+          "$CARGO_HOME/bin/cosmwasm-check" artifacts/passavatar/rd_passavatar.wasm 2>&1 | tee artifacts/passavatar/validation.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wasm-${{ matrix.os }}
+          path: ${{ matrix.layout }}/source/artifacts/passavatar/
+          if-no-files-found: error
+  compare:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wasm-*
+          path: comparison
+      - name: Verify both pinned checksums and compare bytes
+        run: |
+          set -euo pipefail
+          for os in ubuntu-22.04 ubuntu-24.04; do
+            (cd "comparison/wasm-$os" && sha256sum --check ../../release/checksums.txt)
+          done
+          cmp comparison/wasm-ubuntu-22.04/rd_passavatar.wasm comparison/wasm-ubuntu-24.04/rd_passavatar.wasm
+          mkdir release-assets
+          cp comparison/wasm-ubuntu-22.04/{rd_passavatar.wasm,checksums.txt} release-assets/
+          for os in ubuntu-22.04 ubuntu-24.04; do
+            cp "comparison/wasm-$os/build.log" "release-assets/build-$os.log"
+            cp "comparison/wasm-$os/validation.log" "release-assets/validation-$os.log"
+          done
+          printf 'Source commit: %s\nTwo clean runners: Ubuntu 22.04 and 24.04 x86_64\nDifferent checkout, Cargo, Rustup and target paths; byte comparison passed.\nNot an independent third-party review.\n' "$GITHUB_SHA" > release-assets/provenance.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: rd-passavatar-wasm-${{ github.sha }}
-          path: |
-            artifacts/passavatar/rd_passavatar.wasm
-            artifacts/passavatar/checksums.txt
+          name: verified-release-candidate
+          path: release-assets/
           if-no-files-found: error
+  publish-review-candidate:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: compare
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-release-candidate
+          path: release-assets
+      - name: Publish tagged prerelease for independent review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="review-${GITHUB_SHA:0:12}"
+          # Fail rather than replacing an existing release's bytes.
+          gh release create "$tag" release-assets/* \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Avatar Club 100 review candidate ${GITHUB_SHA:0:12}" \
+            --notes-file release/REVIEW-NOTES.md

@@ -893,3 +893,125 @@ fn secondary_market_requires_explicit_issuer_activation() {
         .is_err());
     assert_eq!(token(&app, &c, "AV-000001").owner, holder_address(100));
 }
+
+// Documents the trust boundary: authentic quotes do not prove actual gas paid.
+#[test]
+fn compromised_quote_signer_can_reduce_seller_payment() {
+    let (mut app, c) = setup(true);
+    claim(&mut app, &c, "001");
+    app.execute_contract(
+        Addr::unchecked(holder_address(1)),
+        c.clone(),
+        &ExecuteMsg::List {
+            token_id: "AV-000001".into(),
+            price: Uint128::new(100_000),
+        },
+        &[],
+    )
+    .unwrap();
+    let listing: Option<Listing> = app
+        .wrap()
+        .query_wasm_smart(
+            &c,
+            &QueryMsg::Listing {
+                token_id: "AV-000001".into(),
+            },
+        )
+        .unwrap();
+    let mut quote = q(
+        &app,
+        &c,
+        "buyer",
+        "buy_listing",
+        "AV-000001",
+        listing.unwrap().revision,
+        100_000,
+    );
+    quote.network_fee = Uint128::new(94_999);
+    let before = app
+        .wrap()
+        .query_balance(holder_address(1), "uluna")
+        .unwrap()
+        .amount;
+    app.execute_contract(
+        Addr::unchecked("buyer"),
+        c.clone(),
+        &ExecuteMsg::BuyListing {
+            token_id: "AV-000001".into(),
+            signature: sig(&quote),
+            quote,
+        },
+        &[coin(5_001, "uluna")],
+    )
+    .unwrap();
+    assert_eq!(token(&app, &c, "AV-000001").owner, "buyer");
+    assert_eq!(
+        app.wrap()
+            .query_balance(holder_address(1), "uluna")
+            .unwrap()
+            .amount
+            - before,
+        Uint128::new(1)
+    );
+}
+
+#[test]
+fn pause_requires_founder_and_preserves_listing_cancellation() {
+    let (mut app, c) = setup(true);
+    claim(&mut app, &c, "001");
+    app.execute_contract(
+        Addr::unchecked(holder_address(1)),
+        c.clone(),
+        &ExecuteMsg::List {
+            token_id: "AV-000001".into(),
+            price: Uint128::new(100_000),
+        },
+        &[],
+    )
+    .unwrap();
+    assert!(app
+        .execute_contract(
+            Addr::unchecked("buyer"),
+            c.clone(),
+            &ExecuteMsg::SetPaused { paused: true },
+            &[],
+        )
+        .is_err());
+    app.execute_contract(
+        Addr::unchecked(FOUNDER),
+        c.clone(),
+        &ExecuteMsg::SetPaused { paused: true },
+        &[],
+    )
+    .unwrap();
+    assert!(app
+        .execute_contract(
+            Addr::unchecked(FOUNDER),
+            c.clone(),
+            &ExecuteMsg::ClaimBaseForPass {
+                pass_token_id: "002".into(),
+                expected_owner: holder_address(2)
+            },
+            &[],
+        )
+        .is_err());
+    app.execute_contract(
+        Addr::unchecked(holder_address(1)),
+        c.clone(),
+        &ExecuteMsg::CancelListing {
+            token_id: "AV-000001".into(),
+        },
+        &[],
+    )
+    .unwrap();
+    let listing: Option<Listing> = app
+        .wrap()
+        .query_wasm_smart(
+            &c,
+            &QueryMsg::Listing {
+                token_id: "AV-000001".into(),
+            },
+        )
+        .unwrap();
+    assert!(listing.is_none());
+}
