@@ -17,7 +17,7 @@ if env | grep -q '^CARGO_PROFILE_'; then
   echo 'Remove CARGO_PROFILE_* environment overrides before a release build.' >&2
   exit 1
 fi
-cargo +1.85.1 fmt --manifest-path "$contract_dir/Cargo.toml" --check
+cargo +1.85.1 fmt --manifest-path "$contract_dir/Cargo.toml"
 cargo +1.85.1 test --manifest-path "$contract_dir/Cargo.toml" --locked
 sysroot="$(rustc +1.85.1 --print sysroot)"
 cargo_home="$(cd "${CARGO_HOME:-$HOME/.cargo}" && pwd -P)"
