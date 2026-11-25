@@ -1,4 +1,4 @@
-# RD Station — Avatar Club 100 CosmWasm contract
+# RD Station — Avatar Club 100 Base-only CosmWasm contract
 
 Public contract source for independent review. This repository does not include
 the RD Station application. **Review candidate; not audited or mainnet approved.**
@@ -21,11 +21,9 @@ source, Cargo registry and Rust sysroot paths, including std built with
 not a claim to use the standard cosmwasm/optimizer image. Do not compare an
 optimizer-produced binary against this native recipe's hash.
 
-The previous recipe embedded local Rust/Cargo paths and compared two builds
-sharing the same installation. Its hash
-`6e2075f95c52b69b116e681d2a8b19778081f2b9de67819bb4063816ce120a84`
-is **not the expected hash for this corrected recipe**. The new measured
-checksum is recorded in `release/checksums.txt` when verified.
+The checksum in `release/checksums.txt` must only be added after this exact
+source snapshot has been built and independently reproduced. No previous Wasm
+checksum applies to this Base-only source.
 
 Outputs: `artifacts/passavatar/rd_passavatar.wasm`, `checksums.txt`, and
 `build.log`. CI builds on separate Ubuntu runners with different checkout,
@@ -37,10 +35,10 @@ Automated CI agreement does not replace that independent verification.
 ## Contract and authority
 
 Read [Security and authority](docs/SECURITY-AND-AUTHORITY.md) before voting.
-Base claims are free for eligible Pass 001–100 holders and sponsored by NFT000.
-The quote signer is not used by those claims. Paid execution paths remain in the
-source, have a non-rotatable quote key, and require further security review.
-No independent third-party audit is supplied.
+The contract contains only a self-serve Base claim for the current owner of an
+eligible Pass 001–100. It has no paid execution path, quote key, marketplace,
+evolution system, pause switch, admin execute message, transfer function or
+funds-distribution logic. No independent third-party audit is supplied.
 
 ## Governance deployment model
 
@@ -48,8 +46,10 @@ The intended new proposal stores **only the reviewed Wasm** using governance
 MsgStoreCode, without adding a developer wallet to code-upload permissions.
 The payload must be checked against the live Terra Classic message schema,
 limits and permissions and simulated before any deposit/signature request.
-Instantiation is separate: Founder sender, correct Pass address, mint_price 0,
-approved image, reviewed quote key and **no chain-level migration admin**.
+Instantiation is separate: the reviewed Founding Pass contract address and
+approved image hash only. No Founder wallet, quote key, mint price or operational
+admin is required by this Base-only module. The deployment must also specify no
+chain-level migration admin.
 No deployment is performed by this repository's build/release workflow.
 
 The prior on-chain proposal #12238 is not changed by source or forum edits.
