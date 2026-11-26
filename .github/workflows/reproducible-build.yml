@@ -54,6 +54,7 @@ jobs:
           cmp comparison/wasm-ubuntu-22.04/rd_passavatar.wasm comparison/wasm-ubuntu-24.04/rd_passavatar.wasm
           mkdir release-assets
           cp comparison/wasm-ubuntu-22.04/{rd_passavatar.wasm,checksums.txt} release-assets/
+          cat release-assets/checksums.txt
           for os in ubuntu-22.04 ubuntu-24.04; do
             cp "comparison/wasm-$os/build.log" "release-assets/build-$os.log"
             cp "comparison/wasm-$os/validation.log" "release-assets/validation-$os.log"
