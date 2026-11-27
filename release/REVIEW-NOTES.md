@@ -12,7 +12,10 @@ mainnet-approved.
   to submit claims on behalf of users.
 - The contract receives no funds and emits no bank messages.
 - Paths for the source checkout, Cargo registry, and rebuilt Rust standard
-  library are normalized during compilation.
+  library are normalized during compilation, as are the Rustup installation and
+  temporary Cargo target directory.
+- The build fails if runner, home, temporary or workspace paths remain embedded
+  in the Wasm.
 - No checksum is valid for this candidate until the build is run and reproduced
   from this exact commit.
 - Read `docs/SECURITY-AND-AUTHORITY.md` for the complete Base-only trust model.

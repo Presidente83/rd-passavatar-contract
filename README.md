@@ -16,10 +16,13 @@ cosmwasm-check artifacts/passavatar/rd_passavatar.wasm
 ```
 
 Rust 1.85.1, Cargo.lock and compilation flags are pinned. The script normalizes
-source, Cargo registry and Rust sysroot paths, including std built with
-`-Z build-std=std,panic_abort`. This is the **path-normalization alternative**,
-not a claim to use the standard cosmwasm/optimizer image. Do not compare an
-optimizer-produced binary against this native recipe's hash.
+the checkout, Cargo registry, Rustup installation, Rust sysroot and temporary
+target paths, including std built with `-Z build-std=std,panic_abort`. It also
+sets `SOURCE_DATE_EPOCH=0` and fails if the resulting Wasm contains a
+machine-specific absolute path. This is
+the **path-normalization alternative**, not a claim to use the standard
+cosmwasm/optimizer image. Do not compare an optimizer-produced binary against
+this native recipe's hash.
 
 The checksum in `release/checksums.txt` must only be added after this exact
 source snapshot has been built and independently reproduced. No previous Wasm
@@ -30,7 +33,9 @@ Outputs: `artifacts/passavatar/rd_passavatar.wasm`, `checksums.txt`, and
 Cargo and Rustup paths, then compares the bytes. The release workflow attaches
 the exact Wasm, checksums and both build logs to a tagged prerelease only after
 all jobs pass. Reviewers should reproduce the release tag on their own machine.
-Automated CI agreement does not replace that independent verification.
+Automated CI agreement does not replace that independent verification. The
+published checksum must be regenerated after any source or build-recipe change;
+the build refuses to accept a stale checksum.
 
 ## Contract and authority
 

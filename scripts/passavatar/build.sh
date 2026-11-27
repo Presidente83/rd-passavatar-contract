@@ -17,7 +17,7 @@ if env | grep -q '^CARGO_PROFILE_'; then
   echo 'Remove CARGO_PROFILE_* environment overrides before a release build.' >&2
   exit 1
 fi
-cargo +1.85.1 fmt --manifest-path "$contract_dir/Cargo.toml"
+cargo +1.85.1 fmt --manifest-path "$contract_dir/Cargo.toml" --check
 cargo +1.85.1 test --manifest-path "$contract_dir/Cargo.toml" --locked
 sysroot="$(rustc +1.85.1 --print sysroot)"
 cargo_home="$(cd "${CARGO_HOME:-$HOME/.cargo}" && pwd -P)"
@@ -40,7 +40,8 @@ trap 'rm -rf "$build_target"' EXIT
 cd "$contract_dir"
 # Do not inherit a machine-specific timestamp from the caller.
 export SOURCE_DATE_EPOCH=0
-RUSTC_BOOTSTRAP=1 cargo +1.85.1 build -Z build-std=std,panic_abort --locked --release --target wasm32-unknown-unknown --target-dir "$build_target"
+RUSTC_BOOTSTRAP=1 cargo +1.85.1 build -Z build-std=std,panic_abort \
+  --locked --release --target wasm32-unknown-unknown --target-dir "$build_target"
 cp "$build_target/wasm32-unknown-unknown/release/rd_passavatar.wasm" "$artifact_dir/"
 cd "$artifact_dir"
 sha256sum rd_passavatar.wasm > checksums.txt
