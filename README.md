@@ -24,9 +24,11 @@ the **path-normalization alternative**, not a claim to use the standard
 cosmwasm/optimizer image. Do not compare an optimizer-produced binary against
 this native recipe's hash.
 
-The checksum in `release/checksums.txt` must only be added after this exact
-source snapshot has been built and independently reproduced. No previous Wasm
-checksum applies to this Base-only source.
+The verified candidate commit is
+`9a473efe9c92ae172be3d5c580879d6cf40a386c` and its Wasm SHA-256 is
+`e6ff051cb7358f1272bc36981849756cefae54f96a66e6b12ba83cc214d70d5c`.
+This checksum was reproduced byte-for-byte on Ubuntu 22.04 and Ubuntu 24.04;
+that automated agreement does not replace independent third-party review.
 
 Outputs: `artifacts/passavatar/rd_passavatar.wasm`, `checksums.txt`, and
 `build.log`. CI builds on separate Ubuntu runners with different checkout,

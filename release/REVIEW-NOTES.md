@@ -16,10 +16,13 @@ mainnet-approved.
   temporary Cargo target directory.
 - The build fails if runner, home, temporary or workspace paths remain embedded
   in the Wasm.
-- No checksum is valid for this candidate until the build is run and reproduced
-  from this exact commit.
+- Verified CI candidate commit: `9a473efe9c92ae172be3d5c580879d6cf40a386c`.
+- Verified Wasm SHA-256: `e6ff051cb7358f1272bc36981849756cefae54f96a66e6b12ba83cc214d70d5c`.
+- GitHub Actions run: https://github.com/Presidente83/rd-passavatar-contract/actions/runs/45984431710
 - Read `docs/SECURITY-AND-AUTHORITY.md` for the complete Base-only trust model.
 - CI compares actual Wasm bytes from separate runners with separate paths.
   This is automated reproduction, **not independent third-party verification**.
+- The comparison passed on Ubuntu 22.04 and Ubuntu 24.04; both runners also
+  passed tests and `cosmwasm-check`.
 - No governance submission, deposit, contract upload, or instantiation is made
   by publishing this release. Proposal #12238 is not modified.
