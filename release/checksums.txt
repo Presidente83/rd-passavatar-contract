@@ -1,1 +1,1 @@
-e6ff051cb7358f1272bc36981849756cefae54f96a66e6b12ba83cc214d70d5c  rd_passavatar.wasm
+b8b155fd0424d90fab8b255e47e5c01d27dbaf2edc4a5a7cfc1e0bd161ca6df6  rd_passavatar.wasm

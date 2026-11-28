@@ -24,9 +24,9 @@ the **path-normalization alternative**, not a claim to use the standard
 cosmwasm/optimizer image. Do not compare an optimizer-produced binary against
 this native recipe's hash.
 
-The verified candidate commit is
-`9a473efe9c92ae172be3d5c580879d6cf40a386c` and its Wasm SHA-256 is
-`e6ff051cb7358f1272bc36981849756cefae54f96a66e6b12ba83cc214d70d5c`.
+The parser-fix candidate commit is
+`0d14b00dfb613c62b419d5e7102f3a232a29ae26` and its Wasm SHA-256 is
+`b8b155fd0424d90fab8b255e47e5c01d27dbaf2edc4a5a7cfc1e0bd161ca6df6`.
 This checksum was reproduced byte-for-byte on Ubuntu 22.04 and Ubuntu 24.04;
 that automated agreement does not replace independent third-party review.
 
@@ -61,3 +61,22 @@ No deployment is performed by this repository's build/release workflow.
 
 The prior on-chain proposal #12238 is not changed by source or forum edits.
 See [review notes](release/REVIEW-NOTES.md).
+
+## Current deployment review data
+
+The intended Founding Pass contract for this candidate is
+`terra1ry5cu262ehyptdkyedx42uj6l3agd2yljenjjmmnnauuqp4mvlesa8jzrp`.
+That address must still be checked against the live chain immediately before
+any instantiation transaction. The exact instantiation message is:
+
+```json
+{
+  "founders_contract": "terra1ry5cu262ehyptdkyedx42uj6l3agd2yljenjjmmnnauuqp4mvlesa8jzrp",
+  "image_sha256": "f219c7ca963c30f626bbbd180f1673dc126e6a0a65438c275fec891048434318"
+}
+```
+
+After instantiation, query `contract_info` and confirm that `admin` is empty.
+The proposal must state that the Wasm is unaudited and must use governance-only
+`MsgStoreCode`; it must not instantiate the contract or assign a migration
+administrator.
