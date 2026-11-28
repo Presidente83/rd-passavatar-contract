@@ -61,3 +61,22 @@ No deployment is performed by this repository's build/release workflow.
 
 The prior on-chain proposal #12238 is not changed by source or forum edits.
 See [review notes](release/REVIEW-NOTES.md).
+
+## Current deployment review data
+
+The intended Founding Pass contract for this candidate is
+`terra1ry5cu262ehyptdkyedx42uj6l3agd2yljenjjmmnnauuqp4mvlesa8jzrp`.
+That address must still be checked against the live chain immediately before
+any instantiation transaction. The exact instantiation message is:
+
+```json
+{
+  "founders_contract": "terra1ry5cu262ehyptdkyedx42uj6l3agd2yljenjjmmnnauuqp4mvlesa8jzrp",
+  "image_sha256": "f219c7ca963c30f626bbbd180f1673dc126e6a0a65438c275fec891048434318"
+}
+```
+
+After instantiation, query `contract_info` and confirm that `admin` is empty.
+The proposal must state that the Wasm is unaudited and must use governance-only
+`MsgStoreCode`; it must not instantiate the contract or assign a migration
+administrator.

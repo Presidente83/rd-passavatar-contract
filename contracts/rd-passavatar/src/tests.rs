@@ -18,8 +18,17 @@ fn pass_exec(_: DepsMut, _: Env, _: MessageInfo, _: Empty) -> StdResult<Response
 fn pass_query(d: Deps, _: Env, q: PassQuery) -> StdResult<Binary> {
     match q {
         PassQuery::OwnerOf { token_id } if token_id == "001" => {
-            #[cw_serde] struct O { owner: String }
-            to_json_binary(&Some(O { owner: cw_storage_plus::Item::<String>::new("owner").load(d.storage)? }))
+            #[cw_serde]
+            struct O {
+                token_id: String,
+                owner: String,
+                locked_listing_id: Option<String>,
+            }
+            to_json_binary(&Some(O {
+                token_id,
+                owner: cw_storage_plus::Item::<String>::new("owner").load(d.storage)?,
+                locked_listing_id: None,
+            }))
         }
         PassQuery::OwnerOf { .. } => to_json_binary(&Option::<String>::None),
     }

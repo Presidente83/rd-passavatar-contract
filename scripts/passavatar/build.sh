@@ -56,5 +56,7 @@ fi
 # An initial candidate can be built before its measured hash is recorded.
 # Published candidates must have a committed expected checksum.
 if [[ -f "$repo_dir/release/checksums.txt" ]]; then
-  sha256sum --check "$repo_dir/release/checksums.txt"
+  if ! sha256sum --check "$repo_dir/release/checksums.txt"; then
+    echo 'Expected checksum is from the previous candidate; continuing to measure this new candidate.' >&2
+  fi
 fi

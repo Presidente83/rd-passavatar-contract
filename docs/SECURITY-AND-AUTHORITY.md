@@ -40,6 +40,13 @@ The actual instantiation transaction must be reviewed separately. In
 particular, the Founding Pass contract address must be checked before signing.
 The deployment must not assign a chain-level migration administrator.
 
+For the current review candidate, the intended Founding Pass address is
+`terra1ry5cu262ehyptdkyedx42uj6l3agd2yljenjjmmnnauuqp4mvlesa8jzrp`; this is a
+deployment input to verify against the live chain, not an address embedded in
+the Wasm. The exact instantiate payload also includes the fixed image hash
+`f219c7ca963c30f626bbbd180f1673dc126e6a0a65438c275fec891048434318`.
+After deployment, `contract_info.admin` must be queried and confirmed empty.
+
 ## External dependency
 
 At claim time, the contract queries the configured Founding Pass contract using

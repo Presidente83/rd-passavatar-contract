@@ -26,3 +26,18 @@ mainnet-approved.
   passed tests and `cosmwasm-check`.
 - No governance submission, deposit, contract upload, or instantiation is made
   by publishing this release. Proposal #12238 is not modified.
+
+## Follow-up parser fix
+
+The previous review candidate accepted only the `owner` field from the
+Founders Core `OwnerOf` response in its mock. The live response also includes
+`token_id` and `locked_listing_id`; the parser now ignores unknown metadata and
+the test uses that live response shape. This is a compatibility fix only: the
+claim path still compares the returned owner with the transaction sender.
+
+The intended Founding Pass contract for deployment review is
+`terra1ry5cu262ehyptdkyedx42uj6l3agd2yljenjjmmnnauuqp4mvlesa8jzrp`, subject to
+live-chain confirmation immediately before any instantiate transaction. The
+instantiate payload must contain only that address and the fixed image hash;
+`contract_info.admin` must be empty after instantiation. The new proposal must
+remain governance-only `MsgStoreCode`, unaudited, and separate from #12238.

@@ -28,7 +28,10 @@ enum FounderQuery {
     OwnerOf { token_id: String },
 }
 
-#[cw_serde]
+// Founders Core v1 returns additional metadata alongside the owner. Keep this
+// response type deliberately permissive: the claim path needs only `owner`,
+// and a future metadata field must not make every claim fail.
+#[derive(serde::Deserialize)]
 struct FounderOwner {
     owner: String,
 }
